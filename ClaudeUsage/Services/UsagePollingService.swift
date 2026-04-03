@@ -6,7 +6,8 @@ final class UsagePollingService {
     private let appState: AppState
     private let apiService = ClaudeAPIService()
     private var timer: Timer?
-    private var lastNotifiedCritical = false
+    private var lastNotifiedSessionPct: Int = -1
+    private var lastNotifiedWeeklyPct: Int = -1
     private var cachedToken: String?
 
     init(appState: AppState) {
@@ -45,7 +46,7 @@ final class UsagePollingService {
     private func refresh() async {
         guard let token = cachedToken else {
             appState.isConfigured = false
-            appState.error = "Claude Code not authenticated. Run: claude auth login"
+            appState.error = "Not connected — run `claude auth login` in your terminal, then relaunch."
             return
         }
 
@@ -66,30 +67,67 @@ final class UsagePollingService {
                     appState.usage = usage
                     checkAlerts(usage)
                 } catch {
-                    appState.error = error.localizedDescription
+                    appState.error = friendlyError(error)
                 }
             } else {
                 cachedToken = nil
                 appState.isConfigured = false
-                appState.error = "Token expired. Run: claude auth login"
+                appState.error = "Session expired — run `claude auth login` in your terminal, then relaunch."
             }
         } catch {
-            appState.error = error.localizedDescription
+            // Keep showing last known data on transient errors
+            if appState.usage.lastUpdated != .distantPast {
+                appState.error = "Refresh failed — showing last known data. \(friendlyError(error))"
+            } else {
+                appState.error = friendlyError(error)
+            }
         }
 
         appState.isLoading = false
     }
 
+    private func friendlyError(_ error: Error) -> String {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet: return "No internet connection."
+            case .timedOut: return "Request timed out. Will retry."
+            case .cannotConnectToHost, .networkConnectionLost: return "Can't reach Anthropic API. Will retry."
+            default: return "Network issue. Will retry."
+            }
+        }
+        if let apiError = error as? ClaudeAPIError {
+            return apiError.localizedDescription ?? "Unknown API error."
+        }
+        return "Something went wrong. Will retry."
+    }
+
     private func checkAlerts(_ usage: ClaudeUsageData) {
-        let isCritical = usage.session.utilization >= 20 || usage.weeklyAll.utilization >= 20
-        if isCritical && !lastNotifiedCritical {
-            lastNotifiedCritical = true
+        let sessionThreshold = Double(appState.sessionThreshold)
+        let weeklyThreshold = Double(appState.weeklyThreshold)
+
+        // Session alert
+        let sessionPct = usage.session.percentage
+        if usage.session.utilization >= sessionThreshold && lastNotifiedSessionPct < Int(sessionThreshold) {
+            lastNotifiedSessionPct = sessionPct
             sendNotification(
-                title: "Claude Usage Alert",
-                body: "Session: \(usage.session.percentage)% | Weekly: \(usage.weeklyAll.percentage)%"
+                title: "Claude Session: \(sessionPct)% used",
+                body: "Session usage is above \(appState.sessionThreshold)%. \(usage.session.resetDescription)."
             )
         }
-        if !isCritical { lastNotifiedCritical = false }
+        if usage.session.utilization < sessionThreshold { lastNotifiedSessionPct = -1 }
+
+        // Weekly alert (delayed so both are visible)
+        let weeklyPct = usage.weeklyAll.percentage
+        if usage.weeklyAll.utilization >= weeklyThreshold && lastNotifiedWeeklyPct < Int(weeklyThreshold) {
+            lastNotifiedWeeklyPct = weeklyPct
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                self.sendNotification(
+                    title: "Claude Weekly: \(weeklyPct)% used",
+                    body: "Weekly usage is above \(self.appState.weeklyThreshold)%. \(usage.weeklyAll.resetDescription)."
+                )
+            }
+        }
+        if usage.weeklyAll.utilization < weeklyThreshold { lastNotifiedWeeklyPct = -1 }
     }
 
     private func requestNotificationPermission() {

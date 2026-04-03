@@ -550,6 +550,7 @@
             <ul class="nav-links">
                 <li><a href="#features">Features</a></li>
                 <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#cost">Cost</a></li>
                 <li><a href="#install">Install</a></li>
                 <li><a href="https://github.com/bishojbk/claude-usage" target="_blank">GitHub</a></li>
             </ul>
@@ -592,17 +593,17 @@
             <div class="feature-card">
                 <div class="feature-icon">&#127919;</div>
                 <h3>Near-zero cost</h3>
-                <p>Fetches usage from rate-limit headers on a minimal Haiku API call. Each poll costs less than a fraction of a cent.</p>
+                <p>Each poll is a single Haiku token — ~$0.000012 per request. That's roughly $0.10/month at the default 5-minute refresh interval. Essentially free.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">&#128276;</div>
-                <h3>Smart alerts</h3>
-                <p>Get macOS notifications when you approach 90% session or weekly usage. The menu bar icon turns red so you never get surprised.</p>
+                <h3>Custom alerts</h3>
+                <p>Set separate notification thresholds for session and weekly usage. Get macOS notifications the moment you cross your limit. Menu bar turns red when critical.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">&#128736;</div>
                 <h3>Native Swift</h3>
-                <p>Built with SwiftUI. Lightweight ~2MB binary. No Electron, no web views, no background daemons. Just a clean menu bar app.</p>
+                <p>Built with SwiftUI. Lightweight ~2MB binary. No Electron, no web views, no background daemons. Launch at login support built in.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">&#128275;</div>
@@ -646,6 +647,34 @@
         </div>
     </section>
 
+    <section class="how-it-works" id="cost">
+        <h2>What it costs you</h2>
+        <div style="max-width:600px;margin:0 auto;">
+            <div class="feature-card" style="margin-bottom:20px;">
+                <table style="width:100%;font-size:14px;border-collapse:collapse;">
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:12px 0;color:var(--text-muted);">Per poll</td>
+                        <td style="padding:12px 0;text-align:right;">~15 input + 1 output token</td>
+                        <td style="padding:12px 0;text-align:right;color:var(--green);">$0.000012</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:12px 0;color:var(--text-muted);">Per day</td>
+                        <td style="padding:12px 0;text-align:right;">288 polls (every 5 min)</td>
+                        <td style="padding:12px 0;text-align:right;color:var(--green);">$0.003</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:12px 0;color:var(--text-muted);">Per month</td>
+                        <td style="padding:12px 0;text-align:right;">~8,640 polls</td>
+                        <td style="padding:12px 0;text-align:right;color:var(--green);font-weight:600;">~$0.10</td>
+                    </tr>
+                </table>
+            </div>
+            <p style="text-align:center;font-size:14px;color:var(--text-muted);">
+                Each poll sends a minimal 1-token Haiku request. Even rate-limited (429) responses return usage data in the headers — so nothing is wasted. For subscription users (Pro/Max), this has zero impact on your plan limits.
+            </p>
+        </div>
+    </section>
+
     <section class="install" id="install">
         <div class="install-card">
             <h2>Get started</h2>
@@ -654,7 +683,7 @@
             <div class="install-commands">
                 <div class="cmd-label">Build from source</div>
                 <code>
-                    <span>$</span> git clone https://github.com/user/claude-usage<br>
+                    <span>$</span> git clone https://github.com/bishojbk/claude-usage<br>
                     <span>$</span> cd claude-usage<br>
                     <span>$</span> make install
                 </code>

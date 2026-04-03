@@ -5,6 +5,8 @@ import SwiftUI
 final class AppState: ObservableObject {
     @AppStorage("refreshIntervalMinutes") var refreshIntervalMinutes: Int = 5
     @AppStorage("organizationId") var organizationId: String = ""
+    @AppStorage("sessionThreshold") var sessionThreshold: Int = 80
+    @AppStorage("weeklyThreshold") var weeklyThreshold: Int = 50
 
     @Published var usage: ClaudeUsageData = .empty
     @Published var isLoading: Bool = false
