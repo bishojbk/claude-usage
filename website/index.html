@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Usage — Menu Bar Usage Monitor for Claude</title>
+    <meta name="description" content="A native macOS menu bar app that shows your Claude AI usage limits at a glance. Auto-detects Claude Code credentials. Free and open source.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface-2: #1e1e1e;
+            --border: #2a2a2a;
+            --text: #e8e8e8;
+            --text-muted: #888;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --green: #22c55e;
+            --orange: #f59e0b;
+            --red: #ef4444;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .nav-brand span {
+            font-size: 20px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--text); }
+
+        /* Hero */
+        .hero {
+            padding: 160px 24px 100px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+            background: var(--surface);
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        h1 {
+            font-size: clamp(40px, 6vw, 64px);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        h1 .gradient {
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 540px;
+            margin: 0 auto 40px;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+            transform: translateY(-1px);
+        }
+
+        /* Mockup */
+        .mockup-section {
+            padding: 0 24px 100px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .mockup {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            width: 380px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .mockup-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .mockup-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .mockup-loading {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .usage-row {
+            margin-bottom: 18px;
+        }
+
+        .usage-row-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .usage-row-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .usage-row-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .usage-row-pct {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .bar-track {
+            height: 8px;
+            background: var(--surface-2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .bar-fill.blue { background: var(--accent); }
+        .bar-fill.orange { background: var(--orange); }
+        .bar-fill.green { background: var(--green); }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
+
+        .section-label {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        .mockup-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Features */
+        .features {
+            padding: 100px 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .features h2 {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            transition: border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            border-color: #3a3a3a;
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 16px;
+            background: var(--surface-2);
+        }
+
+        .feature-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* How it works */
+        .how-it-works {
+            padding: 100px 24px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .how-it-works h2 {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .step {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        .step-num {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .step-content h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .step-content code {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 8px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--green);
+        }
+
+        /* Install */
+        .install {
+            padding: 100px 24px;
+            text-align: center;
+        }
+
+        .install-card {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px;
+        }
+
+        .install h2 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+        }
+
+        .install p {
+            color: var(--text-muted);
+            margin-bottom: 28px;
+        }
+
+        .install-commands {
+            text-align: left;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .install-commands .cmd-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .install-commands code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--green);
+            display: block;
+            line-height: 1.8;
+        }
+
+        .install-commands code span {
+            color: var(--text-muted);
+        }
+
+        /* Tech */
+        .tech-badges {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .tech-badge {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 24px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        footer a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--text); }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .nav-links { display: none; }
+            .hero { padding: 120px 20px 60px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .install-card { padding: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <a href="#" class="nav-brand">
+                <span>&#9889;</span> Claude Usage
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#install">Install</a></li>
+                <li><a href="https://github.com" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="badge">
+            <span class="badge-dot"></span>
+            Open source &middot; macOS native
+        </div>
+        <h1>Your Claude usage,<br><span class="gradient">always visible.</span></h1>
+        <p>A lightweight macOS menu bar app that shows your Claude session and weekly usage limits in real time. No setup required.</p>
+        <div class="cta-group">
+            <a href="#install" class="btn btn-primary">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Download
+            </a>
+            <a href="https://github.com" class="btn btn-secondary" target="_blank">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                View Source
+            </a>
+        </div>
+    </section>
+
+    <section class="mockup-section">
+        <div class="mockup">
+            <div class="mockup-header">
+                <h3>Your usage limits</h3>
+                <div class="mockup-loading"></div>
+            </div>
+
+            <div class="usage-row">
+                <div class="usage-row-label">
+                    <div>
+                        <div class="usage-row-title">Current session</div>
+                        <div class="usage-row-sub">Resets in 2 hr 12 min</div>
+                    </div>
+                    <div class="usage-row-pct"><span class="anim-pct" data-target="82">0</span>% used</div>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill blue anim-bar" data-width="82" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="section-label">Weekly limits</div>
+
+            <div class="usage-row">
+                <div class="usage-row-label">
+                    <div>
+                        <div class="usage-row-title">All models</div>
+                        <div class="usage-row-sub">Resets Mon 10:45 AM</div>
+                    </div>
+                    <div class="usage-row-pct"><span class="anim-pct" data-target="49">0</span>% used</div>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill blue anim-bar" data-width="49" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="usage-row">
+                <div class="usage-row-label">
+                    <div>
+                        <div class="usage-row-title">Sonnet only</div>
+                        <div class="usage-row-sub">You haven't used Sonnet yet</div>
+                    </div>
+                    <div class="usage-row-pct"><span class="anim-pct" data-target="0">0</span>% used</div>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill green anim-bar" data-width="2" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="mockup-footer">
+                <span>Last updated: just now</span>
+                <span style="display:flex;gap:12px;">
+                    <span style="cursor:pointer;">&#9881;</span>
+                    <span style="cursor:pointer;">&#8635;</span>
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <h2>Built for developers</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">&#128273;</div>
+                <h3>Zero-config auth</h3>
+                <p>Automatically reads your Claude Code OAuth credentials from the macOS Keychain. No API keys, no session cookies, no browser DevTools.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#9889;</div>
+                <h3>Always in your menu bar</h3>
+                <p>See your session usage percentage at a glance. Click to expand the full breakdown of session and weekly limits with reset timers.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#127919;</div>
+                <h3>Near-zero cost</h3>
+                <p>Fetches usage from rate-limit headers on a minimal Haiku API call. Each poll costs less than a fraction of a cent.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#128276;</div>
+                <h3>Smart alerts</h3>
+                <p>Get macOS notifications when you approach 90% session or weekly usage. The menu bar icon turns red so you never get surprised.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#128736;</div>
+                <h3>Native Swift</h3>
+                <p>Built with SwiftUI. Lightweight ~2MB binary. No Electron, no web views, no background daemons. Just a clean menu bar app.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#128275;</div>
+                <h3>Open source</h3>
+                <p>Fully open source. Inspect the code, verify the API calls, contribute features. Your credentials never leave your machine.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works" id="how-it-works">
+        <h2>How it works</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                    <h3>Reads your existing credentials</h3>
+                    <p>If you've ever run <code>claude auth login</code>, your OAuth token is already stored in the macOS Keychain. Claude Usage reads it automatically — no extra login needed.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                    <h3>Pings the Anthropic API</h3>
+                    <p>Every few minutes, it sends a tiny 1-token Haiku request to the Anthropic API. Both successful (200) and rate-limited (429) responses include your usage data in the response headers.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-content">
+                    <h3>Parses rate-limit headers</h3>
+                    <p>The API returns headers like <code>anthropic-ratelimit-unified-5h-utilization</code> and <code>anthropic-ratelimit-unified-7d-utilization</code> containing your exact session and weekly usage percentages.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-content">
+                    <h3>Displays in your menu bar</h3>
+                    <p>Your usage appears as a compact percentage in the menu bar. Click to see the full breakdown with progress bars, reset timers, and weekly limits — just like the claude.ai settings page.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="install" id="install">
+        <div class="install-card">
+            <h2>Get started</h2>
+            <p>Requires macOS 14+ and Claude Code installed.</p>
+
+            <div class="install-commands">
+                <div class="cmd-label">Build from source</div>
+                <code>
+                    <span>$</span> git clone https://github.com/user/claude-usage<br>
+                    <span>$</span> cd claude-usage<br>
+                    <span>$</span> make install
+                </code>
+            </div>
+
+            <div class="install-commands">
+                <div class="cmd-label">Prerequisites</div>
+                <code>
+                    <span>#</span> Authenticate Claude Code (if not already)<br>
+                    <span>$</span> claude auth login
+                </code>
+            </div>
+
+            <div class="tech-badges">
+                <span class="tech-badge">Swift 6</span>
+                <span class="tech-badge">SwiftUI</span>
+                <span class="tech-badge">macOS 14+</span>
+                <span class="tech-badge">Anthropic API</span>
+                <span class="tech-badge">Keychain</span>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>Built by developers, for developers. Not affiliated with Anthropic.</p>
+        <p style="margin-top:8px;">
+            <a href="https://github.com" target="_blank">GitHub</a> &middot;
+            <a href="https://claude.ai" target="_blank">Claude</a> &middot;
+            MIT License
+        </p>
+    </footer>
+
+    <script>
+        // Animate bars and percentages on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    document.querySelectorAll('.anim-bar').forEach(bar => {
+                        setTimeout(() => {
+                            bar.style.width = bar.dataset.width + '%';
+                        }, 300);
+                    });
+                    document.querySelectorAll('.anim-pct').forEach(pct => {
+                        const target = parseInt(pct.dataset.target);
+                        let current = 0;
+                        const step = Math.max(1, Math.floor(target / 40));
+                        const interval = setInterval(() => {
+                            current += step;
+                            if (current >= target) {
+                                current = target;
+                                clearInterval(interval);
+                            }
+                            pct.textContent = current;
+                        }, 30);
+                    });
+                    observer.disconnect();
+                }
+            });
+        }, { threshold: 0.3 });
+
+        observer.observe(document.querySelector('.mockup'));
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+</body>
+</html>
