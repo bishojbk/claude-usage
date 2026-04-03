@@ -30,31 +30,17 @@
 
 ## What It Looks Like
 
-```
-┌──────────────────────────────────────┐
-│  Menu Bar:   ⚡ 82%                  │
-└──────────────┬───────────────────────┘
-               │ click
-┌──────────────▼───────────────────────┐
-│  Your usage limits                   │
-│                                      │
-│  Current session          82% used   │
-│  Resets in 2 hr 12 min              │
-│  ████████████████░░░░                │
-│  ─────────────────────────────────   │
-│  Weekly limits                       │
-│                                      │
-│  All models               49% used   │
-│  Resets Mon 10:45 AM                │
-│  ██████████░░░░░░░░░░                │
-│                                      │
-│  Sonnet only               0% used   │
-│  You haven't used Sonnet yet        │
-│  ░░░░░░░░░░░░░░░░░░░░                │
-│                                      │
-│  Last updated: just now    ⚙  ↻  ✕  │
-└──────────────────────────────────────┘
-```
+<p align="center">
+  <img src="docs/images/menubar.png" alt="Menu bar showing ⚡ 34%" width="240">
+  <br>
+  <em>Always visible in your menu bar</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/popover.png" alt="Usage popover showing session and weekly limits" width="480">
+  <br>
+  <em>Click to see the full breakdown — session limits, weekly limits, and reset timers</em>
+</p>
 
 ## Install
 

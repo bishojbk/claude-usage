@@ -290,6 +290,38 @@
             color: var(--text-muted);
         }
 
+        /* Screenshots */
+        .screenshots {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .screenshot-item {
+            text-align: center;
+        }
+
+        .screenshot-menubar {
+            height: 48px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .screenshot-popover {
+            width: min(480px, 90vw);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .screenshot-caption {
+            margin-top: 12px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
         /* Features */
         .features {
             padding: 100px 24px;
@@ -544,60 +576,14 @@
     </section>
 
     <section class="mockup-section">
-        <div class="mockup">
-            <div class="mockup-header">
-                <h3>Your usage limits</h3>
-                <div class="mockup-loading"></div>
+        <div class="screenshots">
+            <div class="screenshot-item">
+                <img src="images/menubar.png" alt="Claude Usage in the macOS menu bar showing ⚡ 34%" class="screenshot-menubar">
+                <p class="screenshot-caption">Always visible in your menu bar</p>
             </div>
-
-            <div class="usage-row">
-                <div class="usage-row-label">
-                    <div>
-                        <div class="usage-row-title">Current session</div>
-                        <div class="usage-row-sub">Resets in 2 hr 12 min</div>
-                    </div>
-                    <div class="usage-row-pct"><span class="anim-pct" data-target="82">0</span>% used</div>
-                </div>
-                <div class="bar-track">
-                    <div class="bar-fill blue anim-bar" data-width="82" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div class="divider"></div>
-            <div class="section-label">Weekly limits</div>
-
-            <div class="usage-row">
-                <div class="usage-row-label">
-                    <div>
-                        <div class="usage-row-title">All models</div>
-                        <div class="usage-row-sub">Resets Mon 10:45 AM</div>
-                    </div>
-                    <div class="usage-row-pct"><span class="anim-pct" data-target="49">0</span>% used</div>
-                </div>
-                <div class="bar-track">
-                    <div class="bar-fill blue anim-bar" data-width="49" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div class="usage-row">
-                <div class="usage-row-label">
-                    <div>
-                        <div class="usage-row-title">Sonnet only</div>
-                        <div class="usage-row-sub">You haven't used Sonnet yet</div>
-                    </div>
-                    <div class="usage-row-pct"><span class="anim-pct" data-target="0">0</span>% used</div>
-                </div>
-                <div class="bar-track">
-                    <div class="bar-fill green anim-bar" data-width="2" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div class="mockup-footer">
-                <span>Last updated: just now</span>
-                <span style="display:flex;gap:12px;">
-                    <span style="cursor:pointer;">&#9881;</span>
-                    <span style="cursor:pointer;">&#8635;</span>
-                </span>
+            <div class="screenshot-item">
+                <img src="images/popover.png" alt="Claude Usage popover showing session and weekly usage limits" class="screenshot-popover">
+                <p class="screenshot-caption">Click for the full breakdown — session limits, weekly limits, and reset timers</p>
             </div>
         </div>
     </section>
@@ -714,35 +700,6 @@
     </footer>
 
     <script>
-        // Animate bars and percentages on scroll
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    document.querySelectorAll('.anim-bar').forEach(bar => {
-                        setTimeout(() => {
-                            bar.style.width = bar.dataset.width + '%';
-                        }, 300);
-                    });
-                    document.querySelectorAll('.anim-pct').forEach(pct => {
-                        const target = parseInt(pct.dataset.target);
-                        let current = 0;
-                        const step = Math.max(1, Math.floor(target / 40));
-                        const interval = setInterval(() => {
-                            current += step;
-                            if (current >= target) {
-                                current = target;
-                                clearInterval(interval);
-                            }
-                            pct.textContent = current;
-                        }, 30);
-                    });
-                    observer.disconnect();
-                }
-            });
-        }, { threshold: 0.3 });
-
-        observer.observe(document.querySelector('.mockup'));
-
         // Smooth scroll
         document.querySelectorAll('a[href^="#"]').forEach(a => {
             a.addEventListener('click', e => {
