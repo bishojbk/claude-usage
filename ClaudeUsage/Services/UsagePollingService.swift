@@ -9,14 +9,31 @@ final class UsagePollingService {
     private var lastNotifiedSessionPct: Int = -1
     private var lastNotifiedWeeklyPct: Int = -1
     private var cachedToken: String?
+    private var lastKnownIntervalMinutes: Int
 
     init(appState: AppState) {
         self.appState = appState
+        self.lastKnownIntervalMinutes = appState.refreshIntervalMinutes
         // Read keychain once at startup and cache
         if let creds = KeychainService.loadClaudeCodeToken() {
             cachedToken = creds.accessToken
         }
         requestNotificationPermission()
+        observeRefreshIntervalChanges()
+    }
+
+    /// Reschedule the polling timer when the user changes the interval in Settings.
+    /// `@AppStorage` writes flow through `UserDefaults.didChangeNotification`.
+    private func observeRefreshIntervalChanges() {
+        Task { @MainActor [weak self] in
+            for await _ in NotificationCenter.default.notifications(named: UserDefaults.didChangeNotification) {
+                guard let self else { return }
+                let current = self.appState.refreshIntervalMinutes
+                guard current != self.lastKnownIntervalMinutes else { continue }
+                self.lastKnownIntervalMinutes = current
+                self.rescheduleTimer()
+            }
+        }
     }
 
     func start() {
@@ -96,38 +113,57 @@ final class UsagePollingService {
             }
         }
         if let apiError = error as? ClaudeAPIError {
-            return apiError.localizedDescription ?? "Unknown API error."
+            return apiError.localizedDescription
         }
         return "Something went wrong. Will retry."
     }
 
     private func checkAlerts(_ usage: ClaudeUsageData) {
-        let sessionThreshold = Double(appState.sessionThreshold)
-        let weeklyThreshold = Double(appState.weeklyThreshold)
+        evaluateAlert(
+            label: "Session",
+            limit: usage.session,
+            thresholdPercent: appState.sessionThreshold,
+            lastNotifiedKeyPath: \.lastNotifiedSessionPct,
+            deliveryDelay: 0
+        )
+        // Weekly is delayed so both notifications are visible if they fire on the same poll.
+        evaluateAlert(
+            label: "Weekly",
+            limit: usage.weeklyAll,
+            thresholdPercent: appState.weeklyThreshold,
+            lastNotifiedKeyPath: \.lastNotifiedWeeklyPct,
+            deliveryDelay: 2
+        )
+    }
 
-        // Session alert
-        let sessionPct = usage.session.percentage
-        if usage.session.utilization >= sessionThreshold && lastNotifiedSessionPct < Int(sessionThreshold) {
-            lastNotifiedSessionPct = sessionPct
-            sendNotification(
-                title: "Claude Session: \(sessionPct)% used",
-                body: "Session usage is above \(appState.sessionThreshold)%. \(usage.session.resetDescription)."
-            )
-        }
-        if usage.session.utilization < sessionThreshold { lastNotifiedSessionPct = -1 }
+    /// Fires a notification once when `limit.utilization` first crosses `thresholdPercent`,
+    /// and rearms when it dips back below. `lastNotifiedKeyPath` carries the per-alert
+    /// dedupe state so session and weekly alerts don't share a counter.
+    private func evaluateAlert(
+        label: String,
+        limit: UsageLimit,
+        thresholdPercent: Int,
+        lastNotifiedKeyPath: ReferenceWritableKeyPath<UsagePollingService, Int>,
+        deliveryDelay: TimeInterval
+    ) {
+        let threshold = Double(thresholdPercent)
+        let pct = limit.percentage
 
-        // Weekly alert (delayed so both are visible)
-        let weeklyPct = usage.weeklyAll.percentage
-        if usage.weeklyAll.utilization >= weeklyThreshold && lastNotifiedWeeklyPct < Int(weeklyThreshold) {
-            lastNotifiedWeeklyPct = weeklyPct
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                self.sendNotification(
-                    title: "Claude Weekly: \(weeklyPct)% used",
-                    body: "Weekly usage is above \(self.appState.weeklyThreshold)%. \(usage.weeklyAll.resetDescription)."
-                )
+        if limit.utilization >= threshold && self[keyPath: lastNotifiedKeyPath] < thresholdPercent {
+            self[keyPath: lastNotifiedKeyPath] = pct
+            let title = "Claude \(label): \(pct)% used"
+            let body = "\(label) usage is above \(thresholdPercent)%. \(limit.resetDescription)."
+            if deliveryDelay > 0 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + deliveryDelay) {
+                    self.sendNotification(title: title, body: body)
+                }
+            } else {
+                sendNotification(title: title, body: body)
             }
         }
-        if usage.weeklyAll.utilization < weeklyThreshold { lastNotifiedWeeklyPct = -1 }
+        if limit.utilization < threshold {
+            self[keyPath: lastNotifiedKeyPath] = -1
+        }
     }
 
     private func requestNotificationPermission() {
@@ -139,7 +175,8 @@ final class UsagePollingService {
     }
 
     private func sendNotification(title: String, body: String) {
-        // Try UNUserNotificationCenter first
+        // Try UNUserNotificationCenter first; fall back to osascript only on failure.
+        // The fallback exists because unsigned local builds can't deliver UN notifications.
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -149,17 +186,12 @@ final class UsagePollingService {
             content: content,
             trigger: nil
         )
-        UNUserNotificationCenter.current().add(request) { error in
-            if error != nil {
-                // Fallback to Process-based notification for unsigned apps
-                DispatchQueue.main.async {
-                    self.sendOSANotification(title: title, body: body)
-                }
+        UNUserNotificationCenter.current().add(request) { [weak self] error in
+            guard error != nil else { return }
+            DispatchQueue.main.async {
+                self?.sendOSANotification(title: title, body: body)
             }
         }
-
-        // Also send via osascript as a reliable fallback
-        sendOSANotification(title: title, body: body)
     }
 
     private func sendOSANotification(title: String, body: String) {
