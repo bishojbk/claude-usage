@@ -163,10 +163,15 @@ final class UsagePollingService {
     }
 
     private func sendOSANotification(title: String, body: String) {
-        let script = "display notification \"\(body)\" with title \"\(title)\" sound name \"Glass\""
+        let script = "display notification \"\(escapeForAppleScript(body))\" with title \"\(escapeForAppleScript(title))\" sound name \"Glass\""
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         process.arguments = ["-e", script]
         try? process.run()
+    }
+
+    private func escapeForAppleScript(_ s: String) -> String {
+        s.replacingOccurrences(of: "\\", with: "\\\\")
+         .replacingOccurrences(of: "\"", with: "\\\"")
     }
 }
