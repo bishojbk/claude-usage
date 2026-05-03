@@ -27,7 +27,8 @@ install: app
 
 uninstall:
 	@rm -rf "/Applications/$(APP_DIR)"
-	@echo "Uninstalled $(APP_DIR)"
+	@rm -f "$(HOME)/Library/LaunchAgents/$(BUNDLE_ID).plist"
+	@echo "Uninstalled $(APP_DIR) and removed LaunchAgent"
 
 clean:
 	swift package clean
